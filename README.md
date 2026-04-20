@@ -31,8 +31,6 @@ Place three PNG icon files in the `icons/` folder:
 - `icon48.png`  (48×48)
 - `icon128.png` (128×128)
 
-You can use any WhatsApp-style green icon, or generate free ones at https://favicon.io
-
 ### 2. Load the Extension in Chrome
 1. Open Chrome → `chrome://extensions/`
 2. Toggle **Developer mode** ON (top-right)
@@ -117,21 +115,3 @@ Popup → background.js → chrome.tabs.update (navigate to wa.me URL)
                       → background.js applies random delay
                       → Moves to next contact
 ```
-
-### Why `execCommand` for text injection?
-WhatsApp Web is a React app. React tracks input state via synthetic events.
-Setting `element.textContent = text` directly bypasses React's event system —
-the Send button stays disabled. Using `document.execCommand('insertText')`
-fires a native browser input event that React intercepts, updating its
-internal state and enabling the Send button.
-
----
-
-## Limitations & Known Issues
-
-- **QR Login Required:** WhatsApp Web must be logged in before starting.
-- **Phone Format:** Numbers must include country code (no `+`).
-- **Rate Limits:** WhatsApp may still flag accounts. Use conservatively.
-- **DOM Changes:** If WhatsApp updates their DOM structure, selectors
-  in `content.js` may need updating (see the `INPUT_SELECTORS` array).
-- **Single Tab:** Only operates on the first open WhatsApp Web tab.
