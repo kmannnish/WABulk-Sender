@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WA Bulk Sender Pro</title>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> -->
+  <script src="xlsx.full.min.js"></script>
+  <script src="papaparse.min.js"></script>
+  <style>
+    /* ── Design System ───────────────────────────────────── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --accent:    #25d366;
+      --accent2:   #128c7e;
+      --danger:    #f85149;
+      --warn:      #e3b341;
+      --info:      #58a6ff;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --radius:    8px;
+      --font:      'Segoe UI', system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 440px;
+      min-height: 580px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      padding: 12px 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon { font-size: 22px; }
+    .header h1   { font-size: 15px; font-weight: 700; color: #fff; }
+    .header-meta { font-size: 11px; color: rgba(255,255,255,.82); margin-top: 1px; display: flex; align-items: center; gap: 7px; }
+    .version-badge {
+      background: rgba(0,0,0,.28); border-radius: 4px;
+      padding: 1px 6px; font-size: 10px; font-weight: 700; color: #fff;
+    }
+
+    /* ── Tab Bar ─────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1; padding: 9px 4px;
+      border: none; background: none;
+      color: var(--muted);
+      font-family: var(--font); font-size: 11.5px; font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      letter-spacing: .1px;
+    }
+    .tab:hover  { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Tab Panes ───────────────────────────────────────── */
+    .pane { display: none; flex-direction: column; gap: 12px; padding: 14px 16px; }
+    .pane.active { display: flex; }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .6px;
+      color: var(--muted);
+    }
+
+    /* ── Upload Zone ─────────────────────────────────────── */
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 14px; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent); background: rgba(37,211,102,.04);
+    }
+    .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-icon  { font-size: 22px; margin-bottom: 3px; }
+    .upload-label { color: var(--muted); font-size: 12px; }
+    .upload-label strong { color: var(--accent); }
+    .upload-label code {
+      background: rgba(37,211,102,.12); color: var(--accent);
+      border-radius: 3px; padding: 1px 4px; font-size: 11px;
+    }
+    #file-status {
+      margin-top: 7px; font-size: 12px; min-height: 16px;
+      color: var(--accent); font-weight: 600;
+    }
+
+    /* ── Storage Badge ───────────────────────────────────── */
+    .storage-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(37,211,102,.1); border: 1px solid rgba(37,211,102,.25);
+      border-radius: 4px; padding: 2px 7px;
+      font-size: 10px; color: var(--accent); font-weight: 600;
+    }
+    .storage-badge.warn {
+      background: rgba(227,179,65,.08); border-color: rgba(227,179,65,.25); color: var(--warn);
+    }
+
+    /* ── Contacts Count + Clear ──────────────────────────── */
+    .contacts-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .contacts-count { font-size: 12px; color: var(--muted); }
+    .contacts-count strong { color: var(--accent); }
+
+    .btn-clear {
+      background: none; border: 1px solid var(--danger); color: var(--danger);
+      border-radius: 5px; padding: 3px 10px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-clear:hover { background: rgba(248,81,73,.1); }
+
+    /* ── Contacts Table ──────────────────────────────────── */
+    #contacts-wrap { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; display: none; }
+    .contacts-scroll { max-height: 165px; overflow-y: auto; }
+    #contacts-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    #contacts-table th {
+      background: var(--bg); padding: 5px 8px;
+      text-align: left; color: var(--muted); font-size: 11px;
+      position: sticky; top: 0; z-index: 1;
+    }
+    #contacts-table td { padding: 4px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
+    #contacts-table tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+    #contacts-table tr:hover td { background: rgba(37,211,102,.04); }
+
+    /* Per-row delete button */
+    .btn-del-row {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; padding: 2px 5px; border-radius: 4px;
+      font-size: 12px; line-height: 1;
+      transition: color .15s, background .15s;
+    }
+    .btn-del-row:hover { color: var(--danger); background: rgba(248,81,73,.12); }
+
+    /* ── Mode Toggle ─────────────────────────────────────── */
+    .mode-toggle {
+      display: flex; border: 1px solid var(--border);
+      border-radius: 6px; overflow: hidden; margin-bottom: 12px;
+    }
+    .mode-btn {
+      flex: 1; padding: 7px 6px;
+      background: none; border: none;
+      color: var(--muted);
+      font-family: var(--font); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: background .15s, color .15s;
+    }
+    .mode-btn.active { background: var(--accent2); color: #fff; }
+
+    /* ── Textarea ────────────────────────────────────────── */
+    textarea {
+      width: 100%; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: var(--font); font-size: 13px;
+      padding: 9px 10px; resize: vertical; min-height: 80px;
+      outline: none; transition: border-color .2s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    .hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    .hint code {
+      background: rgba(37,211,102,.12); color: var(--accent);
+      border-radius: 3px; padding: 1px 4px; font-size: 11px;
+    }
+
+    /* ── Media Upload Zone ───────────────────────────────── */
+    .media-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+      cursor: pointer; transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    .media-zone:hover { border-color: var(--info); background: rgba(88,166,255,.04); }
+    .media-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    .media-thumb {
+      width: 52px; height: 52px; border-radius: 6px;
+      background: var(--bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0; font-size: 22px;
+    }
+    .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .media-info-block { flex: 1; min-width: 0; }
+    .media-name { font-size: 12px; color: var(--text); font-weight: 600; }
+    .media-meta { font-size: 11px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+
+    /* Clear media button — must sit above the full-overlay file input */
+    .btn-media-clear {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 17px; padding: 4px; border-radius: 4px;
+      transition: color .15s; flex-shrink: 0;
+      position: relative; z-index: 2; /* above input overlay */
+    }
+    .btn-media-clear:hover { color: var(--danger); }
+
+    .media-hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
+    .media-hint code {
+      background: rgba(88,166,255,.12); color: var(--info);
+      border-radius: 3px; padding: 1px 4px; font-size: 11px;
+    }
+
+    /* ── Settings Grid ───────────────────────────────────── */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .setting-row { display: flex; flex-direction: column; gap: 4px; }
+    .setting-row label { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .setting-row .input-row { display: flex; align-items: center; gap: 5px; }
+    .setting-row input[type="number"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 13px;
+      padding: 6px 8px; outline: none; transition: border-color .2s;
+    }
+    .setting-row input[type="number"]:focus { border-color: var(--accent); }
+    .unit { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Progress ────────────────────────────────────────── */
+    .progress-bar-wrap {
+      background: var(--bg); border-radius: 999px;
+      height: 6px; overflow: hidden; margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      border-radius: 999px; width: 0%; transition: width .4s ease;
+    }
+    .progress-stats { display: flex; gap: 14px; font-size: 12px; }
+    .stat { display: flex; align-items: center; gap: 5px; }
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-sent    { background: var(--accent); }
+    .dot-failed  { background: var(--danger); }
+    .dot-pending { background: var(--muted); }
+    #status-msg {
+      font-size: 11px; color: var(--warn);
+      margin-top: 6px; min-height: 14px; font-style: italic;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────── */
+    .btn-row { display: flex; gap: 8px; }
+    .btn {
+      flex: 1; padding: 9px 10px; border: none; border-radius: var(--radius);
+      font-family: var(--font); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: opacity .15s, transform .1s; letter-spacing: .2px;
+    }
+    .btn:active   { transform: scale(.97); }
+    .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+    .btn-start  { background: var(--accent); color: #000; }
+    .btn-pause  { background: var(--warn);   color: #000; }
+    .btn-stop   { background: var(--danger); color: #fff; }
+    .btn-report { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .footer {
+      text-align: center; padding: 8px 16px 12px;
+      font-size: 10px; color: var(--muted);
+    }
+
+    /* ── Scrollbar ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    /* ── Template Save Row ───────────────────────────────── */
+    .template-row {
+      display: flex; gap: 7px; align-items: center; margin-top: 9px;
+    }
+    .template-name-input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text);
+      font-family: var(--font); font-size: 12px; padding: 6px 9px;
+      outline: none; transition: border-color .2s;
+    }
+    .template-name-input:focus { border-color: var(--accent); }
+    .template-name-input::placeholder { color: var(--muted); }
+    .btn-save-tpl {
+      background: var(--accent2); color: #fff;
+      border: none; border-radius: 6px;
+      padding: 6px 12px; font-family: var(--font);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; transition: opacity .15s;
+      flex-shrink: 0;
+    }
+    .btn-save-tpl:hover { opacity: .85; }
+    .btn-save-tpl:active { opacity: .7; }
+
+    /* ── Saved Templates List ────────────────────────────── */
+    .templates-list {
+      display: flex; flex-direction: column; gap: 5px; margin-top: 8px;
+    }
+    .template-item {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 9px;
+      cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    .template-item:hover { border-color: var(--accent); background: rgba(37,211,102,.04); }
+    .template-item-name { flex: 1; font-size: 12px; color: var(--text); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .template-item-preview { font-size: 11px; color: var(--muted); flex: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-del-tpl {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; padding: 2px 5px; border-radius: 4px;
+      font-size: 13px; transition: color .15s;
+      flex-shrink: 0;
+    }
+    .btn-del-tpl:hover { color: var(--danger); }
+    .tpl-empty { font-size: 12px; color: var(--muted); font-style: italic; padding: 4px 0; }
+
+    /* ── Error-code log panel ────────────────────────────── */
+    #error-log-wrap {
+      display: none; margin-top: 10px;
+    }
+    .error-log-title {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px;
+    }
+    .error-log-scroll {
+      max-height: 100px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 6px;
+    }
+    .error-log-row {
+      display: flex; align-items: center; gap: 7px;
+      padding: 4px 8px; font-size: 11px; border-bottom: 1px solid var(--border);
+    }
+    .error-log-row:last-child { border-bottom: none; }
+    .error-pill {
+      border-radius: 4px; padding: 1px 6px;
+      font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+    }
+    .pill-INPUT_NOT_FOUND  { background: rgba(248,81,73,.15);  color: var(--danger); }
+    .pill-BUTTON_DISABLED  { background: rgba(227,179,65,.15); color: var(--warn); }
+    .pill-POPUP_BLOCKED    { background: rgba(88,166,255,.15); color: var(--info); }
+    .pill-TIMEOUT          { background: rgba(139,148,158,.15); color: var(--muted); }
+    .pill-MEDIA_ERROR      { background: rgba(248,81,73,.15);  color: var(--danger); }
+    .pill-SEND_FAILED      { background: rgba(248,81,73,.1);   color: #ff8a80; }
+    .error-log-phone       { color: var(--muted); font-family: monospace; }
+    .error-log-reason      { color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="header-icon">📤</div>
+    <div>
+      <h1>WA Bulk Sender Pro</h1>
+      <div class="header-meta">
+        web.whatsapp.com
+        <span class="version-badge">v3.3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab Bar ── -->
+  <div class="tabs">
+    <button class="tab active" data-tab="contacts">👥 Contacts</button>
+    <button class="tab"        data-tab="compose" >✏️ Compose</button>
+    <button class="tab"        data-tab="settings">⚙️ Settings</button>
+    <button class="tab"        data-tab="progress">📊 Progress</button>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       TAB 1 — CONTACTS
+  ════════════════════════════════════════════ -->
+  <div class="pane active" id="pane-contacts">
+
+    <!-- Import card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Import Contacts</div>
+        <span id="storage-badge" class="storage-badge warn">No data saved</span>
+      </div>
+
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept=".csv,.xlsx,.xls" />
+        <div class="upload-icon">📋</div>
+        <div class="upload-label">
+          <strong>Click or drag</strong> a CSV / Excel file<br>
+          Required columns: <code>Name</code> &amp; <code>Phone</code>
+        </div>
+      </div>
+      <div id="file-status"></div>
+    </div>
+
+    <!-- Contacts list card (shown when contacts > 0) -->
+    <div class="card" id="contacts-card" style="display:none">
+      <div class="contacts-meta">
+        <div class="contacts-count">
+          <strong id="count-num">0</strong> contacts loaded
+        </div>
+        <button class="btn-clear" id="btn-clear-all">🗑 Clear All</button>
+      </div>
+
+      <div id="contacts-wrap">
+        <div class="contacts-scroll">
+          <table id="contacts-table">
+            <thead>
+              <tr>
+                <th style="width:28px">#</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th style="width:30px"></th>
+              </tr>
+            </thead>
+            <tbody id="contacts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pane-contacts -->
+
+  <!-- ════════════════════════════════════════════
+       TAB 2 — COMPOSE
+  ════════════════════════════════════════════ -->
+  <div class="pane" id="pane-compose">
+
+    <div class="card">
+      <!-- Mode toggle -->
+      <div class="card-title" style="margin-bottom:8px">Send Mode</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-text" >💬 Text Only</button>
+        <button class="mode-btn"        id="mode-media">🖼 Text + Media</button>
+      </div>
+
+      <!-- Message -->
+      <div class="card-title" style="margin-bottom:6px">Message / Caption</div>
+      <textarea id="message-input" placeholder="Hi {{Name}}, here's something special for you!"></textarea>
+      <div class="hint">Variables: <code>{{Name}}</code> <code>{{Phone}}</code></div>
+
+      <!-- ── Template Save / Load ────────────────────────── -->
+      <div class="template-row">
+        <input type="text" id="template-name-input" class="template-name-input"
+               placeholder="Template name (e.g. Promo Oct)" maxlength="40" />
+        <button class="btn-save-tpl" id="btn-save-tpl">💾 Save</button>
+      </div>
+    </div>
+
+    <!-- Saved Templates Card -->
+    <div class="card" id="templates-card">
+      <div class="card-header">
+        <div class="card-title">📂 Saved Templates</div>
+        <span id="tpl-count-badge" class="storage-badge warn">0 saved</span>
+      </div>
+      <div id="templates-list" class="templates-list">
+        <div class="tpl-empty">No templates saved yet.</div>
+      </div>
+    </div>
+
+    <!-- Media card — visible only in "Text + Media" mode -->
+    <div class="card" id="media-card" style="display:none">
+      <div class="card-title" style="margin-bottom:8px">📎 Media Attachment</div>
+
+      <div class="media-zone" id="media-upload-zone">
+        <!-- Hidden file input stretched over the entire zone -->
+        <input type="file" id="media-input" accept="image/*,video/*" />
+
+        <!-- Thumbnail -->
+        <div class="media-thumb" id="media-thumb-wrap">🖼</div>
+
+        <!-- Info -->
+        <div class="media-info-block">
+          <div class="media-name" id="media-title">No file selected</div>
+          <div class="media-meta" id="media-sub">Click to choose image or video</div>
+        </div>
+
+        <!-- Clear button (z-index above input overlay) -->
+        <button class="btn-media-clear" id="btn-media-clear" style="display:none" title="Remove media">✕</button>
+      </div>
+
+      <div class="media-hint">
+        The message above will be sent as the media <strong>caption</strong>.<br>
+        Supports <code>{{Name}}</code> personalisation. Max recommended: ~16 MB.
+      </div>
+    </div>
+
+  </div><!-- /pane-compose -->
+
+  <!-- ════════════════════════════════════════════
+       TAB 3 — SETTINGS
+  ════════════════════════════════════════════ -->
+  <div class="pane" id="pane-settings">
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px">⏱ Anti-Ban Delays</div>
+      <div class="settings-grid">
+        <div class="setting-row">
+          <label>Min Delay</label>
+          <div class="input-row">
+            <input type="number" id="delay-min" value="15" min="5" max="120">
+            <span class="unit">sec</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <label>Max Delay</label>
+          <div class="input-row">
+            <input type="number" id="delay-max" value="30" min="5" max="120">
+            <span class="unit">sec</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <label>Batch Size</label>
+          <div class="input-row">
+            <input type="number" id="batch-size" value="50" min="1" max="500">
+            <span class="unit">msgs</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <label>Batch Pause</label>
+          <div class="input-row">
+            <input type="number" id="batch-pause" value="10" min="1" max="60">
+            <span class="unit">min</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">💾 Persistent Storage</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+        Contacts are auto-saved to <code style="font-size:11px;color:var(--info)">chrome.storage.local</code>
+        and restored when you reopen this popup. Use the button below to wipe all saved data.
+      </div>
+      <button class="btn-clear" id="btn-clear-storage" style="width:100%;text-align:center;padding:7px">
+        🗑 Clear All Stored Data
+      </button>
+    </div>
+
+  </div><!-- /pane-settings -->
+
+  <!-- ════════════════════════════════════════════
+       TAB 4 — PROGRESS
+  ════════════════════════════════════════════ -->
+  <div class="pane" id="pane-progress">
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px">📊 Campaign Progress</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="progress-stats">
+        <div class="stat"><div class="stat-dot dot-sent"></div><span id="stat-sent">Sent: 0</span></div>
+        <div class="stat"><div class="stat-dot dot-failed"></div><span id="stat-failed">Failed: 0</span></div>
+        <div class="stat"><div class="stat-dot dot-pending"></div><span id="stat-total">Total: 0</span></div>
+      </div>
+      <div id="status-msg">Load contacts and compose a message to begin.</div>
+
+      <!-- ── Error Code Log ───────────────────────────────── -->
+      <div id="error-log-wrap">
+        <div class="error-log-title">⚠ Failure Log</div>
+        <div class="error-log-scroll">
+          <div id="error-log-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-start"  id="btn-start"  disabled>▶ Start</button>
+      <button class="btn btn-pause"  id="btn-pause"  disabled>⏸ Pause</button>
+      <button class="btn btn-stop"   id="btn-stop"   disabled>■ Stop</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-report" id="btn-report" disabled>⬇ Download Report CSV</button>
+    </div>
+
+  </div><!-- /pane-progress -->
+
+  <div class="footer">Use responsibly · Excessive messaging may restrict your account</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
