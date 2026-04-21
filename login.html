@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WA Bulk Sender — Login</title>
+  <style>
+    /* ── Shared Design System (mirrors popup.html exactly) ── */
+    :root {
+      --bg:      #0d1117;
+      --surface: #161b22;
+      --border:  #30363d;
+      --accent:  #25d366;
+      --accent2: #128c7e;
+      --danger:  #f85149;
+      --warn:    #e3b341;
+      --info:    #58a6ff;
+      --text:    #e6edf3;
+      --muted:   #8b949e;
+      --radius:  8px;
+      --font:    'Segoe UI', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 440px;
+      min-height: 420px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header (identical to popup.html) ─────────────────── */
+    .header {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      padding: 12px 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon { font-size: 22px; }
+    .header h1   { font-size: 15px; font-weight: 700; color: #fff; }
+    .header-meta {
+      font-size: 11px; color: rgba(255,255,255,.82);
+      margin-top: 1px; display: flex; align-items: center; gap: 7px;
+    }
+    .version-badge {
+      background: rgba(0,0,0,.28); border-radius: 4px;
+      padding: 1px 6px; font-size: 10px; font-weight: 700; color: #fff;
+    }
+
+    /* ── Login body ────────────────────────────────────────── */
+    .login-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 24px 20px 20px;
+    }
+
+    /* ── Welcome block ─────────────────────────────────────── */
+    .welcome {
+      text-align: center;
+      padding-bottom: 4px;
+    }
+    .welcome-icon {
+      font-size: 36px;
+      display: block;
+      margin-bottom: 8px;
+      /* subtle pulse so the lock feels alive */
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1);    opacity: 1; }
+      50%       { transform: scale(1.07); opacity: .85; }
+    }
+    .welcome h2 {
+      font-size: 16px; font-weight: 700; color: var(--text);
+      margin-bottom: 4px;
+    }
+    .welcome p {
+      font-size: 12px; color: var(--muted);
+    }
+
+    /* ── Card (same as popup.html) ─────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 16px 14px;
+    }
+
+    /* ── Form fields ───────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .field:last-of-type { margin-bottom: 0; }
+
+    .field label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .5px;
+      color: var(--muted);
+    }
+
+    /* Input wrapper — holds the icon + input on one line */
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-icon {
+      position: absolute;
+      left: 10px;
+      font-size: 14px;
+      color: var(--muted);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .field input[type="text"],
+    .field input[type="password"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 8px 10px 8px 34px; /* left-pad for icon */
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,211,102,.12);
+    }
+    .field input::placeholder { color: var(--muted); }
+
+    /* Show/hide password toggle */
+    .toggle-pw {
+      position: absolute;
+      right: 10px;
+      background: none; border: none;
+      color: var(--muted); cursor: pointer;
+      font-size: 14px; padding: 2px 4px;
+      transition: color .15s;
+    }
+    .toggle-pw:hover { color: var(--accent); }
+
+    /* ── Status / error message ────────────────────────────── */
+    #login-status {
+      min-height: 18px;
+      font-size: 12px;
+      font-style: italic;
+      text-align: center;
+      color: var(--warn);
+      transition: color .2s;
+    }
+    #login-status.error   { color: var(--danger); }
+    #login-status.success { color: var(--accent); font-style: normal; font-weight: 600; }
+
+    /* ── Login button ──────────────────────────────────────── */
+    #btn-login {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #000;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .3px;
+      transition: opacity .15s, transform .1s, box-shadow .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    #btn-login:hover   { opacity: .92; box-shadow: 0 4px 14px rgba(37,211,102,.25); }
+    #btn-login:active  { transform: scale(.98); }
+    #btn-login:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Spinner inside button */
+    .spinner {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(0,0,0,.25);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #btn-login.loading .spinner { display: block; }
+    #btn-login.loading .btn-text { opacity: .7; }
+
+    /* ── Footer ────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 10px 16px 14px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header — identical structure to popup.html -->
+  <div class="header">
+    <div class="header-icon">📤</div>
+    <div>
+      <h1>WA Bulk Sender Pro - by @mannnish.k</h1>
+      <div class="header-meta">
+        Secure Login
+        <span class="version-badge">v3.5</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-body">
+
+    <!-- Welcome -->
+    <div class="welcome">
+      <span class="welcome-icon">🔐</span>
+      <h2>Welcome Back</h2>
+      <p>Sign in with your authorised credentials to continue.</p>
+    </div>
+
+    <!-- Login card -->
+    <div class="card">
+
+      <!-- Username -->
+      <div class="field">
+        <label for="input-username">Username</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input
+            type="text"
+            id="input-username"
+            placeholder="Enter your username"
+            autocomplete="username"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="field">
+        <label for="input-password">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔑</span>
+          <input
+            type="password"
+            id="input-password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+          <button class="toggle-pw" id="btn-toggle-pw" type="button" title="Show/hide password">
+            👁
+          </button>
+        </div>
+      </div>
+
+      <!-- Status line (errors / success shown here) -->
+      <div id="login-status"></div>
+
+    </div><!-- /card -->
+
+    <!-- Login button (outside card so it gets full width) -->
+    <button id="btn-login" type="button">
+      <div class="spinner"></div>
+      <span class="btn-text">🔓 Sign In</span>
+    </button>
+
+  </div><!-- /login-body -->
+
+  <div class="footer">
+    Your credentials are verified against a secure server. They are never stored locally.
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

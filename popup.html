@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WA Bulk Sender Pro</title>
+  <title>WA Bulk Sender Pro - by @mannnish.k</title>
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> -->
   <script src="xlsx.full.min.js"></script>
@@ -69,6 +69,13 @@
     }
     .tab:hover  { color: var(--text); }
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Admin tab gets a distinct accent when visible */
+    .tab[data-tab="admin"].active { color: var(--info); border-bottom-color: var(--info); }
+
+    /* Hidden by default — popup.js shows it for role=admin only */
+    /*.tab[data-tab="admin"] { display: none; }*/
+    .tab[data-tab="admin"] { display: none !important; }
 
     /* ── Tab Panes ───────────────────────────────────────── */
     .pane { display: none; flex-direction: column; gap: 12px; padding: 14px 16px; }
@@ -214,12 +221,11 @@
     .media-name { font-size: 12px; color: var(--text); font-weight: 600; }
     .media-meta { font-size: 11px; color: var(--muted); margin-top: 2px; word-break: break-all; }
 
-    /* Clear media button — must sit above the full-overlay file input */
     .btn-media-clear {
       background: none; border: none; color: var(--muted);
       cursor: pointer; font-size: 17px; padding: 4px; border-radius: 4px;
       transition: color .15s; flex-shrink: 0;
-      position: relative; z-index: 2; /* above input overlay */
+      position: relative; z-index: 2;
     }
     .btn-media-clear:hover { color: var(--danger); }
 
@@ -362,6 +368,172 @@
     .pill-SEND_FAILED      { background: rgba(248,81,73,.1);   color: #ff8a80; }
     .error-log-phone       { color: var(--muted); font-family: monospace; }
     .error-log-reason      { color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ══════════════════════════════════════════════════════
+       ADMIN PANEL STYLES
+    ══════════════════════════════════════════════════════ */
+
+    /* ── Admin form inputs ───────────────────────────────── */
+    .admin-form { display: flex; flex-direction: column; gap: 10px; }
+
+    .admin-field { display: flex; flex-direction: column; gap: 4px; }
+    .admin-field label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .5px;
+      color: var(--muted);
+    }
+    .admin-field input[type="text"],
+    .admin-field input[type="password"],
+    .admin-field select {
+      width: 100%; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: var(--font); font-size: 13px;
+      padding: 7px 10px; outline: none; transition: border-color .2s;
+      appearance: none; -webkit-appearance: none;
+    }
+    .admin-field input:focus,
+    .admin-field select:focus { border-color: var(--info); }
+    .admin-field input::placeholder { color: var(--muted); }
+
+    /* Role select arrow */
+    .admin-field .select-wrap { position: relative; }
+    .admin-field .select-wrap::after {
+      content: '▾';
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none; font-size: 12px;
+    }
+    .admin-field select { padding-right: 28px; cursor: pointer; }
+
+    /* ── Add-user button ─────────────────────────────────── */
+    #btn-add-user {
+      width: 100%; padding: 9px;
+      background: var(--info); color: #000;
+      border: none; border-radius: var(--radius);
+      font-family: var(--font); font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: opacity .15s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    #btn-add-user:hover   { opacity: .88; }
+    #btn-add-user:active  { transform: scale(.98); }
+    #btn-add-user:disabled { opacity: .38; cursor: not-allowed; }
+
+    /* ── Admin status message ────────────────────────────── */
+    #admin-status {
+      font-size: 12px; font-style: italic; min-height: 16px;
+      text-align: center; color: var(--warn); transition: color .2s;
+    }
+    #admin-status.success { color: var(--accent); font-style: normal; font-weight: 600; }
+    #admin-status.error   { color: var(--danger); }
+
+    /* ── Admin password confirm modal overlay ────────────── */
+    #admin-pw-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    #admin-pw-overlay.visible { display: flex; }
+    #admin-pw-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      width: 320px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    #admin-pw-box h3 {
+      font-size: 14px; font-weight: 700; color: var(--text);
+    }
+    #admin-pw-box p  { font-size: 12px; color: var(--muted); }
+    #admin-pw-input  {
+      width: 100%; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: var(--font); font-size: 13px;
+      padding: 8px 10px; outline: none; transition: border-color .2s;
+    }
+    #admin-pw-input:focus { border-color: var(--info); }
+    .admin-pw-btns { display: flex; gap: 8px; }
+    #admin-pw-confirm {
+      flex: 1; padding: 8px;
+      background: var(--info); color: #000;
+      border: none; border-radius: 6px;
+      font-family: var(--font); font-size: 13px; font-weight: 700;
+      cursor: pointer;
+    }
+    #admin-pw-cancel {
+      padding: 8px 14px;
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 6px; font-family: var(--font); font-size: 13px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    #admin-pw-cancel:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── Users table ─────────────────────────────────────── */
+    .users-table-wrap {
+      border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+    }
+    .users-scroll { max-height: 220px; overflow-y: auto; }
+    #users-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    #users-table th {
+      background: var(--bg); padding: 5px 8px;
+      text-align: left; color: var(--muted); font-size: 11px;
+      position: sticky; top: 0; z-index: 1;
+    }
+    #users-table td {
+      padding: 5px 8px; border-top: 1px solid var(--border); vertical-align: middle;
+    }
+    #users-table tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+    #users-table tr:hover td { background: rgba(88,166,255,.04); }
+
+    /* Active / Inactive badge */
+    .badge-active {
+      display: inline-block;
+      background: rgba(37,211,102,.15); color: var(--accent);
+      border: 1px solid rgba(37,211,102,.3);
+      border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 700;
+    }
+    .badge-inactive {
+      display: inline-block;
+      background: rgba(248,81,73,.12); color: var(--danger);
+      border: 1px solid rgba(248,81,73,.25);
+      border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 700;
+    }
+    .badge-role {
+      display: inline-block;
+      background: rgba(88,166,255,.12); color: var(--info);
+      border: 1px solid rgba(88,166,255,.25);
+      border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+    }
+
+    /* Toggle / Delete action buttons in users table */
+    .btn-user-action {
+      background: none; border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      color: var(--muted);
+    }
+    .btn-user-toggle:hover { border-color: var(--warn); color: var(--warn); background: rgba(227,179,65,.08); }
+    .btn-user-delete:hover { border-color: var(--danger); color: var(--danger); background: rgba(248,81,73,.08); }
+
+    /* Table action buttons column */
+    .user-actions { display: flex; gap: 4px; align-items: center; }
+
+    /* Loading / empty state inside users table */
+    .users-placeholder {
+      padding: 16px; text-align: center;
+      font-size: 12px; color: var(--muted); font-style: italic;
+    }
+
+    /* Refresh button for user list */
+    #btn-refresh-users {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 5px; padding: 3px 9px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    #btn-refresh-users:hover { border-color: var(--info); color: var(--info); }
   </style>
 </head>
 <body>
@@ -370,20 +542,22 @@
   <div class="header">
     <div class="header-icon">📤</div>
     <div>
-      <h1>WA Bulk Sender Pro</h1>
+      <h1>WA Bulk Sender Pro - by @mannnish.k</h1>
       <div class="header-meta">
         web.whatsapp.com
-        <span class="version-badge">v3.3</span>
+        <span class="version-badge">v3.5</span>
       </div>
     </div>
   </div>
 
   <!-- ── Tab Bar ── -->
+  <!-- Admin tab is hidden via CSS (display:none). popup.js reveals it when role=admin. -->
   <div class="tabs">
     <button class="tab active" data-tab="contacts">👥 Contacts</button>
     <button class="tab"        data-tab="compose" >✏️ Compose</button>
     <button class="tab"        data-tab="settings">⚙️ Settings</button>
     <button class="tab"        data-tab="progress">📊 Progress</button>
+    <button class="tab"        data-tab="admin"   >🛡 Admin</button>
   </div>
 
   <!-- ════════════════════════════════════════════
@@ -391,13 +565,11 @@
   ════════════════════════════════════════════ -->
   <div class="pane active" id="pane-contacts">
 
-    <!-- Import card -->
     <div class="card">
       <div class="card-header">
         <div class="card-title">Import Contacts</div>
         <span id="storage-badge" class="storage-badge warn">No data saved</span>
       </div>
-
       <div class="upload-zone" id="upload-zone">
         <input type="file" id="file-input" accept=".csv,.xlsx,.xls" />
         <div class="upload-icon">📋</div>
@@ -409,7 +581,6 @@
       <div id="file-status"></div>
     </div>
 
-    <!-- Contacts list card (shown when contacts > 0) -->
     <div class="card" id="contacts-card" style="display:none">
       <div class="contacts-meta">
         <div class="contacts-count">
@@ -417,7 +588,6 @@
         </div>
         <button class="btn-clear" id="btn-clear-all">🗑 Clear All</button>
       </div>
-
       <div id="contacts-wrap">
         <div class="contacts-scroll">
           <table id="contacts-table">
@@ -443,19 +613,16 @@
   <div class="pane" id="pane-compose">
 
     <div class="card">
-      <!-- Mode toggle -->
       <div class="card-title" style="margin-bottom:8px">Send Mode</div>
       <div class="mode-toggle">
         <button class="mode-btn active" id="mode-text" >💬 Text Only</button>
         <button class="mode-btn"        id="mode-media">🖼 Text + Media</button>
       </div>
 
-      <!-- Message -->
       <div class="card-title" style="margin-bottom:6px">Message / Caption</div>
       <textarea id="message-input" placeholder="Hi {{Name}}, here's something special for you!"></textarea>
       <div class="hint">Variables: <code>{{Name}}</code> <code>{{Phone}}</code></div>
 
-      <!-- ── Template Save / Load ────────────────────────── -->
       <div class="template-row">
         <input type="text" id="template-name-input" class="template-name-input"
                placeholder="Template name (e.g. Promo Oct)" maxlength="40" />
@@ -463,7 +630,6 @@
       </div>
     </div>
 
-    <!-- Saved Templates Card -->
     <div class="card" id="templates-card">
       <div class="card-header">
         <div class="card-title">📂 Saved Templates</div>
@@ -474,27 +640,17 @@
       </div>
     </div>
 
-    <!-- Media card — visible only in "Text + Media" mode -->
     <div class="card" id="media-card" style="display:none">
       <div class="card-title" style="margin-bottom:8px">📎 Media Attachment</div>
-
       <div class="media-zone" id="media-upload-zone">
-        <!-- Hidden file input stretched over the entire zone -->
         <input type="file" id="media-input" accept="image/*,video/*" />
-
-        <!-- Thumbnail -->
         <div class="media-thumb" id="media-thumb-wrap">🖼</div>
-
-        <!-- Info -->
         <div class="media-info-block">
           <div class="media-name" id="media-title">No file selected</div>
           <div class="media-meta" id="media-sub">Click to choose image or video</div>
         </div>
-
-        <!-- Clear button (z-index above input overlay) -->
         <button class="btn-media-clear" id="btn-media-clear" style="display:none" title="Remove media">✕</button>
       </div>
-
       <div class="media-hint">
         The message above will be sent as the media <strong>caption</strong>.<br>
         Supports <code>{{Name}}</code> personalisation. Max recommended: ~16 MB.
@@ -543,10 +699,23 @@
     </div>
 
     <div class="card">
+      <div class="card-title" style="margin-bottom:8px">👤 Account</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+        Signed in as: <strong id="display-username" style="color:var(--accent)">—</strong>
+        &nbsp;·&nbsp;
+        Role: <strong id="display-role" style="color:var(--info)">—</strong>
+      </div>
+      <button class="btn-clear" id="btn-logout"
+              style="width:100%;text-align:center;padding:7px;border-color:var(--warn);color:var(--warn)">
+        🚪 Sign Out
+      </button>
+    </div>
+
+    <div class="card">
       <div class="card-title" style="margin-bottom:8px">💾 Persistent Storage</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
         Contacts are auto-saved to <code style="font-size:11px;color:var(--info)">chrome.storage.local</code>
-        and restored when you reopen this popup. Use the button below to wipe all saved data.
+        and restored when you reopen this popup.
       </div>
       <button class="btn-clear" id="btn-clear-storage" style="width:100%;text-align:center;padding:7px">
         🗑 Clear All Stored Data
@@ -572,7 +741,6 @@
       </div>
       <div id="status-msg">Load contacts and compose a message to begin.</div>
 
-      <!-- ── Error Code Log ───────────────────────────────── -->
       <div id="error-log-wrap">
         <div class="error-log-title">⚠ Failure Log</div>
         <div class="error-log-scroll">
@@ -591,6 +759,90 @@
     </div>
 
   </div><!-- /pane-progress -->
+
+  <!-- ════════════════════════════════════════════
+       TAB 5 — ADMIN  (hidden until role=admin)
+  ════════════════════════════════════════════ -->
+  <div class="pane" id="pane-admin">
+
+    <!-- Add User card -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">➕ Add New User</div>
+
+      <div class="admin-form">
+
+        <div class="admin-field">
+          <label for="admin-new-username">Username</label>
+          <input type="text" id="admin-new-username" placeholder="e.g. alice" autocomplete="off" spellcheck="false" />
+        </div>
+
+        <div class="admin-field">
+          <label for="admin-new-password">Password</label>
+          <input type="password" id="admin-new-password" placeholder="Min 6 characters" autocomplete="new-password" />
+        </div>
+
+        <div class="admin-field">
+          <label for="admin-new-role">Role</label>
+          <div class="select-wrap">
+            <select id="admin-new-role">
+              <option value="user"  selected>user</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="admin-status"></div>
+
+        <button id="btn-add-user">➕ Add User</button>
+      </div>
+    </div>
+
+    <!-- User list card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">👥 All Users</div>
+        <button id="btn-refresh-users">↻ Refresh</button>
+      </div>
+
+      <div class="users-table-wrap">
+        <div class="users-scroll">
+          <table id="users-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Last Login</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr>
+                <td colspan="5" class="users-placeholder">Click ↻ Refresh to load users.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pane-admin -->
+
+  <!-- ════════════════════════════════════════════
+       ADMIN PASSWORD CONFIRMATION OVERLAY
+       Shown whenever an admin action needs verification
+  ════════════════════════════════════════════ -->
+  <div id="admin-pw-overlay">
+    <div id="admin-pw-box">
+      <h3>🔐 Confirm Admin Password</h3>
+      <p id="admin-pw-desc">Enter your admin password to authorise this action.</p>
+      <input type="password" id="admin-pw-input" placeholder="Your admin password" autocomplete="current-password" />
+      <div class="admin-pw-btns">
+        <button id="admin-pw-confirm">✓ Confirm</button>
+        <button id="admin-pw-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <div class="footer">Use responsibly · Excessive messaging may restrict your account</div>
 
